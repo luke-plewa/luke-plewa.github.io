@@ -1,1 +1,26 @@
-Hello World
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+<ul class="nav nav-tabs" role="tablist" id="myTab">
+  <li class="active"><a href="#home" role="tab" data-toggle="tab">Home</a></li>
+  <li><a href="#profile" role="tab" data-toggle="tab">Profile</a></li>
+  <li><a href="#machine-learning" role="tab" data-toggle="tab">Machine Learning</a></li>
+</ul>
+
+<div class="tab-content">
+  <div class="tab-pane fade in active" id="home">...</div>
+  <div class="tab-pane fade" id="profile">...</div>
+  <div class="tab-pane fade" id="machine-learning">...</div>
+</div>
+
+<script>
+  $(function () {
+    $('#myTab a:last').tab('show')
+  })
+</script>
