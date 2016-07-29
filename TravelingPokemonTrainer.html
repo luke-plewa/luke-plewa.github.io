@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({
+      google_ad_client: "ca-pub-1975374009546678",
+      enable_page_level_ads: true
+    });
+  </script>
+  <script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCfCjTPIwEqpAroJBriKSBwcCIO7-ivRVA"></script>
+  <script>
+  function initialize() {
+    var mapProp = {
+      center:new google.maps.LatLng(51.508742,-0.120850),
+      zoom:15,
+      mapTypeId:google.maps.MapTypeId.ROADMAP
+    };
+    var map = new google.maps.Map(document.getElementById("googleMap"), mapProp);
+    var markers = [];
+    var pokeRoute = null;
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        var pos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        map.setCenter(pos);
+      }, function() {});
+    }
+
+    google.maps.event.addListener(map, 'click', function(event) {
+    placeMarker(event.latLng);
+    });
+
+    function placeMarker(location) {
+      var image = "http://www.serebii.net/games/balls/pokeball.png";
+      var marker = new google.maps.Marker({
+        position: location,
+        map: map,
+        icon: image,
+      });
+      markers.push({lat: location.lat(), lng: location.lng()});
+      if (markers.length > 1) {
+        calculateRoute();
+      }
+    }
+
+    Number.prototype.toRad = function() {
+      return this * Math.PI / 180;
+    }
+
+    function getDistance(p1, p2) {
+      var lat1 = p1['lat'];
+      var lat2 = p2['lat'];
+      var lng1 = p1['lng'];
+      var lng2 = p2['lng'];
+      var R = 6371; // km 
+      //has a problem with the .toRad() method below.
+      var x1 = lat2-lat1;
+      var dLat = x1.toRad();  
+      var x2 = lng2-lng1;
+      var dLng = x2.toRad();  
+      var a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+                      Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * 
+                      Math.sin(dLng/2) * Math.sin(dLng/2);  
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      var d = R * c; 
+      return d;
+    }
+
+    function nearestNeighborPath(startIndex, myMarkers) {
+      var optimalPath = [];
+      var visited = Array.apply(null, Array(myMarkers.length)).map(Boolean.prototype.valueOf, false);
+      var currentPoint = startIndex;
+      visited[currentPoint] = true;
+      optimalPath.push(myMarkers[currentPoint]);
+
+      while (visited.indexOf(false) != -1) {
+        var minDistanceValue = -1;
+        var minDistanceIndex = 0;
+
+        for (var i = 0; i < myMarkers.length; i++) {
+          if (!visited[i] && i != currentPoint) {
+            var distance = getDistance(myMarkers[currentPoint], myMarkers[i]);
+            if (minDistanceValue == -1 || distance < minDistanceValue) {
+              minDistanceValue = distance;
+              minDistanceIndex = i;
+            }
+          }
+        }
+
+        currentPoint = minDistanceIndex;
+        visited[minDistanceIndex] = true;
+        optimalPath.push(myMarkers[minDistanceIndex]);
+      }
+      optimalPath.push(myMarkers[startIndex]);
+      return optimalPath;
+    }
+
+    function getPathDistance(path) {
+      var distance = 0;
+      var currPoint = path[0];
+      for (var point in path) {
+        distance += getDistance(currPoint, path[point]);
+        currPoint = path[point];
+      }
+      return distance;
+    }
+
+    function getBestNeighborSolution(myMarkers) {
+      var bestPath = myMarkers;
+      var bestDistance = -1;
+      for (var i = 0; i < myMarkers.length; i++) {
+        path = nearestNeighborPath(i, myMarkers);
+        distance = getPathDistance(path);
+        if (bestDistance == -1 || distance < bestDistance) {
+          bestDistance = distance;
+          bestPath = path;
+        }
+      }
+      return bestPath;
+    }
+
+    function calculateRoute() {
+      // assume walking speed is 5 km/h or 0.42 km in 5 minutes
+      var minDistance = 0.42;
+      var myMarkers = markers.slice(0);
+      var bestPath = getBestNeighborSolution(myMarkers);
+      var bestDistance = getPathDistance(bestPath);
+      var bestEfficiency = myMarkers.length / bestDistance;
+
+      while (myMarkers.length > 2) {
+        var removedMarker = 0;
+        for (var i = 0; i < myMarkers.length; i++) {
+          var currMarkers = myMarkers.slice(0, i).concat(myMarkers.slice(i + 1, myMarkers.length));
+          var currPath = getBestNeighborSolution(currMarkers);
+          var currDistance = getPathDistance(currPath);
+          var currEfficiency = currMarkers.length / currDistance;
+          if (currDistance > minDistance && currEfficiency > bestEfficiency) {
+            bestPath = currPath;
+            bestDistance = currDistance;
+            bestEfficiency = currEfficiency;
+            removedMarker = i;
+          }
+        }
+        myMarkers.splice(removedMarker, 1);
+      }
+
+      drawRoute(bestPath);
+    }
+
+    function drawRoute(path) {
+      if (pokeRoute) {
+        pokeRoute.setMap(null);
+      }
+
+      pokeRoute = new google.maps.Polyline({
+        path: path,
+        geodesic: true,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 2
+      });
+
+      pokeRoute.setMap(map);
+    }
+  }
+  google.maps.event.addDomListener(window, 'load', initialize);
+
+  </script>
+
+  <title>Pokemon Pokestop Route Generator</title>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta charset="utf-8">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-image: url("http://i.imgur.com/WCXkdwW.jpg");
+    }
+    #googleMap {
+      height: 80%;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="googleMap"></div>
+</body>
+</html>
